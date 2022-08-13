@@ -1,0 +1,9 @@
+button,
+input,
+video {
+  display: block;
+}
+
+video {
+  height: 500px;
+}

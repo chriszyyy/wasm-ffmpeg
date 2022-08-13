@@ -1,3 +1,4 @@
+import './wasm-ffmpeg.css';
 import React, { useEffect, useState } from 'react';
 import { createFFmpeg, fetchFile } from '@ffmpeg/ffmpeg';
 
@@ -52,20 +53,30 @@ export const WasmContainer = () => {
 
   const makeVideo = async () => {
     if (fileList.length > 0) {
-      const filePattern = '%d.jpg';
-      const output = 'output.mp4';
+      const fileInputConfigs = ['-r', '1', '-i', '%d.jpg'];
 
-      await ffmpeg.run(
-        '-r',
-        '1',
-        '-i',
-        filePattern,
-        '-b',
-        '80k',
+      const outputConfigs = [
+        '-b:v',
+        '200k',
         '-s',
-        '640x480',
-        output
-      );
+        '1920x1080',
+        // '-filter_complex',
+        // '[0:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fade=t=out:st=4:d=1[v0]; \
+        // [1:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fade=t=in:st=0:d=1,fade=t=out:st=4:d=1[v1]; \
+        // [2:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fade=t=in:st=0:d=1,fade=t=out:st=4:d=1[v2]; \
+        // [3:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fade=t=in:st=0:d=1,fade=t=out:st=4:d=1[v3]; \
+        // [4:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fade=t=in:st=0:d=1,fade=t=out:st=4:d=1[v4]; \
+        // [5:v]scale=1280:720:force_original_aspect_ratio=decrease,pad=1280:720:(ow-iw)/2:(oh-ih)/2,setsar=1,fade=t=in:st=0:d=1,fade=t=out:st=4:d=1[v5]; \
+        // [v0][v1][v2][v3][v4][v5]concat=n=6:v=1:a=0,format=yuv420p[v]',
+        // '-map',
+        // '[v]',
+        // '-map',
+        // '6:a',
+        // '-shortest',
+        'output.mp4',
+      ];
+
+      await ffmpeg.run(...fileInputConfigs, ...outputConfigs);
 
       const data = ffmpeg.FS('readFile', 'output.mp4');
       setVideoSrc(
@@ -75,10 +86,9 @@ export const WasmContainer = () => {
   };
 
   useEffect(() => {
-    setIsLoaded(true);
-    ffmpeg.load().then((res) => {
-      console.log(1, res);
-    });
+    if (!ffmpeg.isLoaded()) {
+      ffmpeg.load().then(() => setIsLoaded(true));
+    }
   }, []);
 
   return (
@@ -95,8 +105,8 @@ export const WasmContainer = () => {
               multiple
               onChange={onFilesSelected}
             />
-            <video src={videoSrc} controls></video>
             <br />
+            <video src={videoSrc} controls></video>
           </React.Fragment>
         )}
         {!isLoaded && <span>Initializing</span>}
